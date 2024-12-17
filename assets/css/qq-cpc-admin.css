@@ -1,0 +1,47 @@
+.qq-cpc-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
+.qq-cpc-form {
+    margin: 20px 0;
+}
+
+.qq-cpc-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.qq-cpc-form input[type="text"] {
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: 15px;
+}
+
+.qq-cpc-results {
+    margin-top: 30px;
+}
+
+.qq-cpc-results h3 {
+    margin-bottom: 15px;
+}
+
+.qq-cpc-results table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 800px;
+}
+
+.qq-cpc-results th {
+    width: 200px;
+    background: #f8f9fa;
+}
+
+.qq-cpc-results td a {
+    text-decoration: none;
+}

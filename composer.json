@@ -1,0 +1,22 @@
+{
+    "name": "quintoquarto/qq-cpc-woocommerce",
+    "description": "Check and update WooCommerce order statuses using CPC API",
+    "version": "0.1.0",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Quinto Quarto",
+            "email": "info@quintoquarto.it"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "QQCPC\\": "inc/"
+        }
+    },
+    "require": {
+        "php": ">=7.4"
+    },
+    "minimum-stability": "dev"
+}
