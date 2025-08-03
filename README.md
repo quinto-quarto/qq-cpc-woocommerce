@@ -51,16 +51,14 @@ For support, please contact the plugin developer or raise an issue in the plugin
 
 ## Changelog
 
+### 0.2.0
+- Added WP-Cron for automatic periodic CPC order status checking (hourly)
+- Added setting to enable/disable automatic order status updates
+- Automatic order completion and customer notifications when tracking is available
+- Enhanced admin interface with automatic update controls
+
 ### 0.1.0
 - Initial release
 - Basic CPC tracking integration
 - Customer notifications
 - Order status updates
-
-## Roadmap
-
-### 0.2.0
-
-- use WP-Cron for periodic check on CPC order status
-- Added setting to switch from manual to automatic order status updates
-- Enhanced customer notifications

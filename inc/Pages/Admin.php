@@ -41,6 +41,7 @@ class Admin {
 
     public function register_settings() {
         register_setting($this->option_group, 'qq_cpc_api_token');
+        register_setting($this->option_group, 'qq_cpc_auto_update');
 
         add_settings_section(
             $this->settings_section,
@@ -56,6 +57,14 @@ class Admin {
             $this->settings_page,
             $this->settings_section
         );
+
+        add_settings_field(
+            'qq_cpc_auto_update',
+            'Automatic Updates',
+            array($this, 'auto_update_field_callback'),
+            $this->settings_page,
+            $this->settings_section
+        );
     }
 
     public function settings_section_callback() {
@@ -67,6 +76,13 @@ class Admin {
         if (!is_admin()) return;
         $token = get_option('qq_cpc_api_token');
         echo '<input type="text" name="qq_cpc_api_token" value="' . esc_attr($token) . '" class="regular-text">';
+    }
+
+    public function auto_update_field_callback() {
+        if (!is_admin()) return;
+        $auto_update = get_option('qq_cpc_auto_update', '0');
+        echo '<input type="checkbox" name="qq_cpc_auto_update" value="1" ' . checked('1', $auto_update, false) . '>';
+        echo '<label for="qq_cpc_auto_update">Automatically update order status to completed and notify customers when tracking is available</label>';
     }
 
     public function render_settings_page() {

@@ -188,5 +188,25 @@ class OrderStatus {
         }
 
         $order->save();
+
+        // Check if automatic updates are enabled and tracking is available
+        $auto_update_enabled = get_option('qq_cpc_auto_update', '0');
+        if ($auto_update_enabled && !empty($status_info->InfoUrl) && $order->get_status() === 'processing') {
+            $this->automatically_complete_order($order, $status_info->InfoUrl);
+        }
+    }
+
+    private function automatically_complete_order($order, $tracking_url) {
+        // Add tracking note to customer
+        $note = sprintf(
+            'La spedizione per l\'ordine è in corso. Trovate il tracking del corriere a questo link: %s',
+            $tracking_url
+        );
+        $order->add_order_note($note, true); // true means send to customer
+
+        // Update order status to completed
+        $order->update_status('completed');
+        
+        error_log('QQ CPC: Automatically completed order ' . $order->get_id() . ' with tracking URL');
     }
 }
