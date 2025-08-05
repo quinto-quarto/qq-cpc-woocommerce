@@ -1,6 +1,8 @@
 <?php
 namespace QQCPC\Pages;
 
+use QQCPC\Utils\Logger;
+
 class Admin {
     private $settings_page = 'qq-cpc-settings';
     private $option_group = 'qq_cpc_settings';
@@ -185,6 +187,11 @@ class Admin {
                     </div>
                 <?php endif; ?>
             </div>
+
+            <div class="qq-cpc-card" style="margin-top: 20px;">
+                <h2>Recent Actions</h2>
+                <?php $this->render_recent_actions(); ?>
+            </div>
         </div>
         <?php
     }
@@ -224,6 +231,9 @@ class Admin {
             // Add WooCommerce order info
             $result->WooOrderNumber = $order_id;
             $result->CustomerName = $order->get_formatted_billing_full_name();
+            Logger::log('order_checked', $order_id, 'Manual order check performed via admin panel', 'success');
+        } else {
+            Logger::log('order_checked', $order_id, 'Manual order check failed - no data found', 'warning');
         }
         error_log('QQ CPC: API result for order: ' . print_r($result, true));
         return $result;
@@ -247,6 +257,8 @@ class Admin {
         $order->update_status('completed');
         
         error_log('QQ CPC: Updated order ' . $order_id . ' with tracking info');
+        Logger::log('order_completed', $order_id, 'Order manually completed with tracking URL via admin', 'success');
+        Logger::log('tracking_sent', $order_id, 'Tracking notification manually sent to customer', 'success');
         return true;
     }
 
@@ -300,5 +312,59 @@ class Admin {
             admin_url('admin.php')
         ));
         exit;
+    }
+
+    private function render_recent_actions() {
+        $logs = Logger::get_logs(20); // Show last 20 actions
+        
+        if (empty($logs)) {
+            echo '<p>No recent actions found.</p>';
+            return;
+        }
+        ?>
+        <table class="wp-list-table widefat fixed striped">
+            <thead>
+                <tr>
+                    <th>Date/Time</th>
+                    <th>Action</th>
+                    <th>Order</th>
+                    <th>Details</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($logs as $log): ?>
+                <tr>
+                    <td><?php echo esc_html(wp_date('Y-m-d H:i:s', $log['timestamp'])); ?></td>
+                    <td><?php echo esc_html(Logger::format_action($log['action'])); ?></td>
+                    <td>
+                        <?php if ($log['order_id'] !== 'N/A'): ?>
+                            <a href="<?php echo esc_url(admin_url('post.php?post=' . $log['order_id'] . '&action=edit')); ?>" target="_blank">
+                                #<?php echo esc_html($log['order_id']); ?>
+                            </a>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                    </td>
+                    <td><?php echo esc_html($log['details']); ?></td>
+                    <td>
+                        <?php echo Logger::get_status_icon($log['status']); ?>
+                        <span class="status-<?php echo esc_attr($log['status']); ?>">
+                            <?php echo esc_html(ucfirst($log['status'])); ?>
+                        </span>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        
+        <style>
+        .status-success { color: #46b450; }
+        .status-error { color: #dc3232; }
+        .status-warning { color: #ffb900; }
+        .qq-cpc-card { background: #fff; padding: 20px; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,0.04); }
+        .qq-cpc-card h2 { margin-top: 0; }
+        </style>
+        <?php
     }
 }

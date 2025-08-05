@@ -2,7 +2,7 @@
 /**
  * Plugin Name: QQ CPC for WooCommerce
  * Description: CPC integration for WooCommerce
- * Version: 0.2.0
+ * Version: 0.2.1
  * Author: Quinto Quarto
  * Text Domain: wcosm
  */

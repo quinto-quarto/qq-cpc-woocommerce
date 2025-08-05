@@ -1,6 +1,8 @@
 <?php
 namespace QQCPC\Api;
 
+use QQCPC\Utils\Logger;
+
 class OrderStatus {
     private $token;
 
@@ -39,6 +41,7 @@ class OrderStatus {
         ));
 
         if (empty($orders)) {
+            Logger::log('cron_check', 'N/A', 'No processing orders found', 'success');
             return;
         }
 
@@ -51,13 +54,17 @@ class OrderStatus {
         }
 
         if (empty($order_codes)) {
+            Logger::log('cron_check', 'N/A', 'No orders with CPC codes found', 'success');
             return;
         }
 
         $response = $this->call_cpc_api($order_codes);
         if (empty($response)) {
+            Logger::log('cron_check', 'N/A', 'API request failed for ' . count($order_codes) . ' orders', 'error');
             return;
         }
+
+        Logger::log('cron_check', 'N/A', 'Checked ' . count($order_codes) . ' orders, found ' . count($response) . ' responses', 'success');
 
         foreach ($response as $status_info) {
             $this->update_order_status($status_info);
@@ -67,6 +74,7 @@ class OrderStatus {
     public function check_single_order($order_code) {
         if (empty($this->token)) {
             error_log('QQ CPC: No API token configured');
+            Logger::log('api_error', 'N/A', 'No API token configured', 'error');
             return null;
         }
 
@@ -86,11 +94,13 @@ class OrderStatus {
             
             if (!empty($response) && is_array($response)) {
                 error_log('QQ CPC: Found valid response with format: ' . $code);
+                Logger::log('api_success', 'N/A', 'Found order data with code format: ' . $code, 'success');
                 return reset($response);
             }
         }
 
         error_log('QQ CPC: No valid response found with any format');
+        Logger::log('api_error', 'N/A', 'No valid response found with any code format for: ' . $order_code, 'error');
         return null;
     }
 
@@ -208,5 +218,7 @@ class OrderStatus {
         $order->update_status('completed');
         
         error_log('QQ CPC: Automatically completed order ' . $order->get_id() . ' with tracking URL');
+        Logger::log('order_completed', $order->get_id(), 'Order automatically completed with tracking URL', 'success');
+        Logger::log('tracking_sent', $order->get_id(), 'Tracking notification sent to customer', 'success');
     }
 }
