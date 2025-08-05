@@ -107,6 +107,7 @@ class OrderStatus {
     private function call_cpc_api($order_codes) {
         if (empty($this->token)) {
             error_log('QQ CPC: No API token for request');
+            Logger::log('api_error', 'N/A', 'No API token configured for automated check', 'error');
             return false;
         }
 
@@ -129,6 +130,8 @@ class OrderStatus {
             return $response_unquoted;
         }
 
+        error_log('QQ CPC: Both API request formats failed');
+        Logger::log('api_error', 'N/A', 'Both quoted and unquoted JSON API requests failed for ' . count($order_codes) . ' orders', 'error');
         return null;
     }
 
@@ -147,19 +150,29 @@ class OrderStatus {
         $response = wp_remote_post(QQ_CPC_API_ENDPOINT, $args);
 
         if (is_wp_error($response)) {
-            error_log('QQ CPC API Error: ' . $response->get_error_message());
+            $error_message = $response->get_error_message();
+            error_log('QQ CPC API Error: ' . $error_message);
+            Logger::log('api_error', 'N/A', 'API request failed: ' . $error_message, 'error');
             return null;
         }
 
         $status_code = wp_remote_retrieve_response_code($response);
         error_log('QQ CPC: Response status code - ' . $status_code);
 
+        if ($status_code !== 200) {
+            error_log('QQ CPC: Non-200 status code received: ' . $status_code);
+            Logger::log('api_error', 'N/A', 'API returned status code: ' . $status_code, 'error');
+        }
+
         $body = wp_remote_retrieve_body($response);
         error_log('QQ CPC: Response body - ' . $body);
 
         $decoded = json_decode($body);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            error_log('QQ CPC: JSON decode error - ' . json_last_error_msg());
+            $json_error = json_last_error_msg();
+            error_log('QQ CPC: JSON decode error - ' . $json_error);
+            Logger::log('api_error', 'N/A', 'JSON decode failed: ' . $json_error . ' | Response: ' . substr($body, 0, 100), 'error');
+            return null;
         }
 
         return $decoded;
