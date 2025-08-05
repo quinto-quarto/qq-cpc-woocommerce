@@ -46,17 +46,22 @@ class OrderStatus {
         }
 
         $order_codes = array();
+        $order_mapping = array(); // Map CPC codes to order IDs
+        
         foreach ($orders as $order) {
-            $cpc_code = $order->get_meta('_qq_cpc_order_code');
+            $cpc_code = $this->extract_cpc_code_from_order($order);
             if (!empty($cpc_code)) {
                 $order_codes[] = $cpc_code;
+                $order_mapping[$cpc_code] = $order->get_id();
             }
         }
 
         if (empty($order_codes)) {
-            Logger::log('cron_check', 'N/A', 'No orders with CPC codes found', 'success');
+            Logger::log('cron_check', 'N/A', 'No orders with CPC codes found in order notes', 'success');
             return;
         }
+
+        Logger::log('cron_check', 'N/A', 'Found ' . count($order_codes) . ' orders with CPC codes: ' . implode(', ', $order_codes), 'success');
 
         $response = $this->call_cpc_api($order_codes);
         if (empty($response)) {
@@ -69,6 +74,43 @@ class OrderStatus {
         foreach ($response as $status_info) {
             $this->update_order_status($status_info);
         }
+    }
+
+    private function extract_cpc_code_from_order($order) {
+        // Get order notes
+        $args = array(
+            'post_id' => $order->get_id(),
+            'type' => 'order_note'
+        );
+        $notes = wc_get_order_notes($args);
+        
+        $cpc_code = null;
+        foreach ($notes as $note) {
+            if (preg_match('/Ordine inviato a CPC con codice ([A-Z0-9]+)/', $note->content, $matches)) {
+                $cpc_code = $matches[1];
+                break;
+            }
+        }
+
+        return $cpc_code;
+    }
+
+    private function find_order_by_cpc_code($cpc_code) {
+        // Get recent orders (last 100) and search through their notes
+        $orders = wc_get_orders(array(
+            'limit' => 100,
+            'orderby' => 'date',
+            'order' => 'DESC'
+        ));
+
+        foreach ($orders as $order) {
+            $order_cpc_code = $this->extract_cpc_code_from_order($order);
+            if ($order_cpc_code === $cpc_code) {
+                return $order;
+            }
+        }
+
+        return null;
     }
 
     public function check_single_order($order_code) {
@@ -183,18 +225,13 @@ class OrderStatus {
             return;
         }
 
-        // Find order by CPC code
-        $orders = wc_get_orders(array(
-            'meta_key' => '_qq_cpc_order_code',
-            'meta_value' => $status_info->Codice,
-            'limit' => 1
-        ));
-
-        if (empty($orders)) {
+        // Find order by searching for CPC code in order notes
+        $order = $this->find_order_by_cpc_code($status_info->Codice);
+        
+        if (!$order) {
+            error_log('QQ CPC: Could not find order for CPC code: ' . $status_info->Codice);
             return;
         }
-
-        $order = reset($orders);
         
         // Update order meta with shipping info
         if (!empty($status_info->NumSped)) {
