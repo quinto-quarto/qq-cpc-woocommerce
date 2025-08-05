@@ -9,8 +9,8 @@ final class Init {
     public static function get_services() {
         return [
             Base\Enqueue::class,
+            Base\Updater::class,
             Pages\Admin::class,
-            Api\OrderStatus::class,
             Api\OrderStatus::class
         ];
     }
